@@ -9,10 +9,10 @@ public class RaceFileUtil {
     public final static String ORDER_PREFIX = "order";
 
     public final static String NEW_FILE_SUFFIX = "_new";
-    public final static int STORE_FILE_NUM = 256;
+    public final static int STORE_FILE_NUM = 1024;
     public static char LINUX_LF = '\r';
 
-    public static int BUYER_GOOD_FILE_NUM = 64;
+    public static int BUYER_GOOD_FILE_NUM = 128;
     public static String BUYER_INDEX_PREFIX = "buyer_index_";
     public static String GOOD_INDEX_PREFIX = "good_index_";
     public static String SEMICOLON = ";";

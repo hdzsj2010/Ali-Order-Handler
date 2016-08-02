@@ -9,15 +9,13 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-/**
- * Created by lby on 2016/7/12.
- */
+
 public class OrderSystemImpl implements OrderSystem {
-    public ConcurrentHashMap<Long, Row> hotOrder;
+    //public ConcurrentHashMap<Long, Row> hotOrder;
     //    public ConcurrentHashMap<String, Row> hotGood;
 //    public ConcurrentHashMap<String, Row> hotBuyer;
-    public ConcurrentHashMap<String, String> cacheGood;
-    public ConcurrentHashMap<String, String> cacheBuyer;
+    //public ConcurrentHashMap<String, String> cacheGood;
+    //public ConcurrentHashMap<String, String> cacheBuyer;
 
     //保存是否排序完的结果,key为good索引文件的文件名
 //    private ConcurrentHashMap<String, Future<String>> sortResult;
@@ -34,11 +32,11 @@ public class OrderSystemImpl implements OrderSystem {
     private List<String> storeFolderList;
 
     public OrderSystemImpl() {
-        hotOrder = new ConcurrentHashMap<Long, Row>();
+        //hotOrder = new ConcurrentHashMap<Long, Row>();
 //        hotGood = new ConcurrentHashMap<String, Row>();
 //        hotBuyer = new ConcurrentHashMap<String, Row>();
-        cacheGood = new ConcurrentHashMap<String, String>();
-        cacheBuyer = new ConcurrentHashMap<String, String>();
+        //cacheGood = new ConcurrentHashMap<String, String>();
+        //cacheBuyer = new ConcurrentHashMap<String, String>();
 
         orderWriters = new ArrayList<FileWriter>(RaceFileUtil.STORE_FILE_NUM);
         goodWriters = new ArrayList<FileWriter>(RaceFileUtil.STORE_FILE_NUM);
@@ -52,7 +50,6 @@ public class OrderSystemImpl implements OrderSystem {
     }
 
     //*******************************************构建部分***********************************************************//
-    //构建订单表的索引
     class ConstrutOrderIndex implements Runnable {
         private String orderFileName;
 
@@ -62,7 +59,7 @@ public class OrderSystemImpl implements OrderSystem {
 
         @Override
         public void run() {
-            long startTime = System.currentTimeMillis();
+//            long startTime = System.currentTimeMillis();
             BufferedReader reader = null;
             try {
                 reader = new BufferedReader(new FileReader(orderFileName));
@@ -91,14 +88,10 @@ public class OrderSystemImpl implements OrderSystem {
                     /*long orderId = Long.parseLong(fields[0].substring(8));
                     String buyerId = fields[2].substring(8);
                     String goodId = fields[3].substring(7);*/
-                    
-                    //计算orderId对256取模的值，再根据这个值从orderWriters中取出对应的FileWriter进行写文件
                     int orderFileIndex = (int) (Long.parseLong(orderId) % RaceFileUtil.STORE_FILE_NUM);
-                    //orderkey的存储格式为：orderId;{readline数据}\r
                     String orderkey = orderId.concat(RaceFileUtil.SEMICOLON).concat(s) + RaceFileUtil.LINUX_LF;
                     orderWriters.get(orderFileIndex).write(orderkey);
 
-                    //同上，只不过取模的时候根据Id的再哈希值进行取
                     int goodFileIndex = RaceFileUtil.getHashCode(goodId) % RaceFileUtil.STORE_FILE_NUM;
                     String goodKey = goodId.concat(RaceFileUtil.SEMICOLON).concat(s) + RaceFileUtil.LINUX_LF;
                     goodWriters.get(goodFileIndex).write(goodKey);
@@ -116,12 +109,11 @@ public class OrderSystemImpl implements OrderSystem {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            long endTime = System.currentTimeMillis();
-            System.out.println(orderFileName + "has done :" + (endTime - startTime));
+//            long endTime = System.currentTimeMillis();
+//            System.out.println(orderFileName + "has done :" + (endTime - startTime));
         }
     }
 
-    //构建商品表的索引
     class ConstructGoodIndex implements Runnable {
         private String fileName;
 
@@ -134,9 +126,9 @@ public class OrderSystemImpl implements OrderSystem {
             try {
                 BufferedReader reader = new BufferedReader(new FileReader(fileName));
                 String s = null;
-                int lineNo = 0;
+                //int lineNo = 0;
                 while ((s = reader.readLine()) != null) {
-                    lineNo++;
+                    //lineNo++;
                     String[] fields = s.split("\t");
                     String goodid = null;
                     for (String field : fields) {
@@ -148,15 +140,14 @@ public class OrderSystemImpl implements OrderSystem {
                             break;
                         }
                     }
-                    //如果商品记录数超过了指定值（1300000），就将后面的商品记录存放到cacheGood这个ConcurrentHashMap
-                    if (lineNo > RaceFileUtil.GOOD_LINE_NUM)
-                        cacheGood.put(goodid, s);
-                    //和前面的处理交易记录一样
+//                    if (lineNo > RaceFileUtil.GOOD_LINE_NUM)
+//                        cacheGood.put(goodid, s);
                     int goodFileindex = RaceFileUtil.getHashCode(goodid) % RaceFileUtil.BUYER_GOOD_FILE_NUM;
                     String goodKey = goodid + RaceFileUtil.SEMICOLON + s + RaceFileUtil.LINUX_LF;
                     goodIndexWriters[goodFileindex].write(goodKey);
 
                 }
+                reader.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -175,9 +166,9 @@ public class OrderSystemImpl implements OrderSystem {
             try {
                 BufferedReader reader = new BufferedReader(new FileReader(fileName));
                 String s = null;
-                int lineNo = 0;
+                //int lineNo = 0;
                 while ((s = reader.readLine()) != null) {
-                    lineNo++;
+                    //lineNo++;
                     String[] fields = s.split("\t");
                     String buyerid = null;
                     for (String field : fields) {
@@ -189,15 +180,14 @@ public class OrderSystemImpl implements OrderSystem {
                             break;
                         }
                     }
-                    //如果买家记录数超过了指定值（700000），就将后面的商品记录存放到cacheGood这个ConcurrentHashMap
-                    if (lineNo > RaceFileUtil.BUYER_LINE_NUM)
-                        cacheBuyer.put(buyerid, s);
-                    //和前面的处理交易记录一样
+//                    if (lineNo > RaceFileUtil.BUYER_LINE_NUM)
+//                        cacheBuyer.put(buyerid, s);
                     int buyerFileIndex = RaceFileUtil.getHashCode(buyerid) % RaceFileUtil.BUYER_GOOD_FILE_NUM;
                     String buyerKey = buyerid + RaceFileUtil.SEMICOLON + s + RaceFileUtil.LINUX_LF;
                     buyerIndexWriters[buyerFileIndex].write(buyerKey);
-
+                    
                 }
+                reader.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -206,21 +196,21 @@ public class OrderSystemImpl implements OrderSystem {
 
     //获取对应的ID所在具体文件路径
     public String decideGoodFile(String goodId) {
-        int fileindex = RaceFileUtil.getHashCode(goodId) % RaceFileUtil.STORE_FILE_NUM;//1-255的ID hash对256取模值
-        String filePrefix = storeFolderList.get(fileindex % storeFolderList.size());//1-255对storeFolderList大小取模值，用于取前缀,即将这些文件放在不同的目录下面
-        return filePrefix + RaceFileUtil.GOOD_PREFIX + fileindex;//返回路径，类似D:\\index\\1\\good_255
+        int fileindex = RaceFileUtil.getHashCode(goodId) % RaceFileUtil.STORE_FILE_NUM;
+        String filePrefix = storeFolderList.get(fileindex % storeFolderList.size());
+        return filePrefix + RaceFileUtil.GOOD_PREFIX + fileindex;
     }
 
     public String decideBuyerFile(String buyerId) {
         int fileindex = RaceFileUtil.getHashCode(buyerId) % RaceFileUtil.STORE_FILE_NUM;
         String filePrefix = storeFolderList.get(fileindex % storeFolderList.size());
-        return filePrefix + RaceFileUtil.BUYER_PREFIX + fileindex;//返回路径，类似D:\\index\\1\\buyer_255
+        return filePrefix + RaceFileUtil.BUYER_PREFIX + fileindex;
     }
 
     public String decideOrderFile(long orderId) {
         int fileindex = (int) (orderId % RaceFileUtil.STORE_FILE_NUM);
         String filePrefix = storeFolderList.get(fileindex % storeFolderList.size());
-        return filePrefix + RaceFileUtil.ORDER_PREFIX + fileindex;//返回路径，类似D:\\index\\1\\order_255
+        return filePrefix + RaceFileUtil.ORDER_PREFIX + fileindex;
     }
 
     public String getGoodIndexFile(String goodId) {
@@ -235,19 +225,16 @@ public class OrderSystemImpl implements OrderSystem {
         return filePrefix + RaceFileUtil.BUYER_INDEX_PREFIX + fileindex;
     }
 
-    
-    //初始化！！！
     public void construct(Collection<String> orderFiles,
                           Collection<String> buyerFiles, Collection<String> goodFiles,
                           Collection<String> storeFolders) throws IOException, InterruptedException {
 
-        long startTime = System.currentTimeMillis();
+//        long startTime = System.currentTimeMillis();
 //        System.out.println("buyerFiles size:" + buyerFiles.size());
 //        System.out.println("goodFiles size:" + goodFiles.size());
         storeFolderList.addAll(storeFolders);
         int folderSize = storeFolders.size();
-        System.out.println("orderfile:" + orderFiles.size());
-        //根据不同的文件名生成256个FileWriter，存放到orderWriters、goodWriters、buyerWriters供订单记录构建调用
+//        System.out.println("orderfile:" + orderFiles.size());
         for (int i = 0; i < RaceFileUtil.STORE_FILE_NUM; i++) {
             int index = i % folderSize;
             try {
@@ -261,7 +248,6 @@ public class OrderSystemImpl implements OrderSystem {
                 e.printStackTrace();
             }
         }
-        //根据不同的文件名生成64个FileWriter，存放到orderWriters、goodWriters、buyerWriters供商品记录和买家记录构建调用
         for (int j = 0; j < RaceFileUtil.BUYER_GOOD_FILE_NUM; j++) {
             int index = j % folderSize;
             try {
@@ -273,8 +259,7 @@ public class OrderSystemImpl implements OrderSystem {
                 e.printStackTrace();
             }
         }
-        //开启5个线程为goodfile和buyerfile构建索引，每个线程读一个文件
-        ExecutorService indexService = Executors.newFixedThreadPool(6);
+        ExecutorService indexService = Executors.newFixedThreadPool(4);
         for (String file : goodFiles) {
             indexService.execute(new ConstructGoodIndex(file));
         }
@@ -282,12 +267,14 @@ public class OrderSystemImpl implements OrderSystem {
             indexService.execute(new ConstructBuyerIndex(file));
         }
 
-        //开启4个线程为orderfile构建索引，每个线程读一个文件
+        //开启3个线程为orderfile构建索引
         ExecutorService executorService = Executors.newFixedThreadPool(6);
-        for (String file : orderFiles) {
+        List<String> orderFileList = new ArrayList<>();
+        orderFileList.addAll(orderFiles);
+        Collections.shuffle(orderFileList);     //打乱文件顺序
+        for (String file : orderFileList) {
             executorService.execute(new ConstrutOrderIndex(file));
         }
-        //关闭线程池，并且等待工作中的线程完成任务或者超时停止
         executorService.shutdown();
         indexService.shutdown();
         executorService.awaitTermination(59, TimeUnit.MINUTES);
@@ -315,10 +302,10 @@ public class OrderSystemImpl implements OrderSystem {
 //            //executorService.execute(new ClassifyFile(storeFolderList.get(index) + RaceFileUtil.BUYER_PREFIX + i));    //为buyer排序
 //        }
         //executorService.shutdown();
-        long endTime = System.currentTimeMillis();
+//        long endTime = System.currentTimeMillis();
 //        long leaveTime = 3570000 - (endTime - startTime);
-        long leaveTime = RaceFileUtil.RUNTIME_LIMIT - (endTime - startTime);
-        System.out.println("leaveTime:" + leaveTime);
+//        long leaveTime = RaceFileUtil.RUNTIME_LIMIT - (endTime - startTime);
+//        System.out.println("leaveTime:" + leaveTime);
 //        if (leaveTime > 100)
 //            Thread.sleep(leaveTime);
         //executorService.awaitTermination(13, TimeUnit.MINUTES);
@@ -340,7 +327,7 @@ public class OrderSystemImpl implements OrderSystem {
 
     //**********************************************从hash文件中查询数据************************************************/
     //根据需要查询的ID，从Hash文件中查询所对应的该行数据，
-    // 适用于查找good的Hash文件，buyer的Hash文件以及以orderid作为索引构建的order的Hash文件，该hash文件未排序
+    // 适用于查找good的Hash文件，buyer的Hash文件以及以orderid作为索引构建的order的Hash文件
     public String getDataByIdFromHashFile(String fileName, String searchId) throws IOException {
         BufferedReader bfr = createReader(fileName);
         try {
@@ -407,7 +394,7 @@ public class OrderSystemImpl implements OrderSystem {
                 String key = line.substring(0, p);
                 String dataLine = line.substring(p + 1);
                 if (searchId.equals(key)) {
-                    dataList = dataLine.split(",");//文件内容排序的时候，将相同ID的data放在同一行用逗号隔开
+                    dataList = dataLine.split(",");
                     return dataList;
                 }
                 line = bfr.readLine();
@@ -439,11 +426,22 @@ public class OrderSystemImpl implements OrderSystem {
         return kvMap;
     }
 
-    //解析出order中的goodId和buyerId，并从good和buyer的文件中找出对应的信息，通过createResultRow将keys对应的信息统一封装到ResultImpl中（即Row的hashmap）
     private ResultImpl createResultFromOrderData(Row orderData,
                                                  Collection<String> keys) {
         String goodId = orderData.getKV("goodid").valueAsString();
-        String goodDataStr = cacheGood.get(goodId);
+//        Row goodData = hotGood.get(goodId);
+//        if (goodData == null) {
+//            String fileName = getGoodIndexFile(goodId);
+//            try {
+//                String goodDataStr = getDataByIdFromHashFile(fileName, goodId);
+//                goodData = createKVMapFromLine(goodDataStr);
+//                hotGood.put(goodId, goodData);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+        //di2ban
+        /*String goodDataStr = cacheGood.get(goodId);
         if (goodDataStr == null) {
             String fileName = getGoodIndexFile(goodId);
             try {
@@ -452,11 +450,31 @@ public class OrderSystemImpl implements OrderSystem {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }*/
+        String fileName = getGoodIndexFile(goodId);
+        String goodDataStr = null;
+        try {
+            goodDataStr = getDataByIdFromHashFile(fileName, goodId);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
         Row goodData = createKVMapFromLine(goodDataStr);
 
         String buyerId = orderData.getKV("buyerid").valueAsString();
-        String buyerDataStr = cacheBuyer.get(buyerId);
+//        Row buyerData = hotBuyer.get(buyerId);
+//        if (buyerData == null) {
+//            String fileName = getBuyerIndexFile(buyerId);
+//            try {
+//                String buyerDataStr = getDataByIdFromHashFile(fileName, buyerId);
+//                buyerData = createKVMapFromLine(buyerDataStr);
+//                hotBuyer.put(buyerId, buyerData);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+        //di2ban
+        /*String buyerDataStr = cacheBuyer.get(buyerId);
         if (buyerDataStr == null) {
             String fileName = getBuyerIndexFile(buyerId);
             try {
@@ -465,15 +483,20 @@ public class OrderSystemImpl implements OrderSystem {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        Row buyerData = createKVMapFromLine(buyerDataStr);
-        
+        }*/
+        fileName = getBuyerIndexFile(buyerId);
+        String buyerDataStr = null;
         try {
-            hotOrder.put(orderData.getKV("orderid").valueAsLong(), orderData);
-        } catch (TypeException e) {
+            buyerDataStr = getDataByIdFromHashFile(fileName, buyerId);
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        
+        Row buyerData = createKVMapFromLine(buyerDataStr);
+//        try {
+//            hotOrder.put(orderData.getKV("orderid").valueAsLong(), orderData);
+//        } catch (TypeException e) {
+//            e.printStackTrace();
+//        }
         return ResultImpl.createResultRow(orderData, buyerData, goodData,
                 createQueryKeys(keys));
     }
@@ -491,16 +514,15 @@ public class OrderSystemImpl implements OrderSystem {
     //“索引文件”存的是原始数据
     public Result queryOrder(long orderId, Collection<String> keys) {
         Row orderData = null;
-        //如果hotOrder中已经包含说明这个order的全部数据已经封装并保存到cache中了
-        if (hotOrder.containsKey(orderId)) {
-            orderData = hotOrder.get(orderId);
-//            Row goodData = hotGood.get(orderData.getKV("goodid").valueAsString());
-//            Row buyerData = hotBuyer.get(orderData.getKV("buyerid").valueAsString());
-            Row goodData = createKVMapFromLine(cacheGood.get(orderData.getKV("goodid").valueAsString()));
-            Row buyerData = createKVMapFromLine(cacheBuyer.get(orderData.getKV("buyerid").valueAsString()));
-            return ResultImpl.createResultRow(orderData, buyerData, goodData,
-                    createQueryKeys(keys));
-        } else {
+//        if (hotOrder.containsKey(orderId)) {
+//            orderData = hotOrder.get(orderId);
+////            Row goodData = hotGood.get(orderData.getKV("goodid").valueAsString());
+////            Row buyerData = hotBuyer.get(orderData.getKV("buyerid").valueAsString());
+//            Row goodData = createKVMapFromLine(cacheGood.get(orderData.getKV("goodid").valueAsString()));
+//            Row buyerData = createKVMapFromLine(cacheBuyer.get(orderData.getKV("buyerid").valueAsString()));
+//            return ResultImpl.createResultRow(orderData, buyerData, goodData,
+//                    createQueryKeys(keys));
+//        } else {
             String fileName = decideOrderFile(orderId);
             try {
                 String data = getDataByIdFromHashFile(fileName, Long.toString(orderId));
@@ -514,7 +536,7 @@ public class OrderSystemImpl implements OrderSystem {
                 return createResultFromOrderData(orderData, createQueryKeys(keys));
             else
                 return null;
-        }
+        //}
     }
 
     public Iterator<Result> queryOrdersByBuyer(long startTime, long endTime,
@@ -639,8 +661,7 @@ public class OrderSystemImpl implements OrderSystem {
             e.printStackTrace();
         }
 //        }
-        
-        //注意内部类访问的局部变量要设为final
+
         final SortedMap<Long, Row> orders = orderDataSortedByBGoodOrderId;
         return new Iterator<Result>() {
             SortedMap<Long, Row> o = orders;
