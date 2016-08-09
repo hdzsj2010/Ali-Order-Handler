@@ -1,8 +1,5 @@
 package com.alibaba.middleware.race.utils;
 
-/**
- * Created by wa on 2016/7/22.
- */
 public class RaceFileUtil {
     public final static String BUYER_PREFIX = "buyer_";
     public final static String GOOD_PREFIX = "good_";
