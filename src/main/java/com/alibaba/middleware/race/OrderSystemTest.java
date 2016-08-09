@@ -3,9 +3,7 @@ package com.alibaba.middleware.race;
 import java.io.IOException;
 import java.util.*;
 
-/**
- * Created by lby on 2016/7/18.
- */
+
 public class OrderSystemTest {
     private HashSet<String> createQueryKeys(Collection<String> keys) {
         if (keys == null) {
